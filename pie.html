@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+
+    svg {
+      width: 50%;
+      height: 50%;
+      position: absolute;
+      top: 25%;
+      left: 25%;
+    }
+  </style>
+</head>
+<body>
+  <div style="text-align: center;">
+  <h1>Kuang Zou</h1>
+  <h1>01155</h1>
+  <input type="text" id="inputData" placeholder="A 8,B 2">
+  <button onclick="updateChart()">Update Chart</button>
+  <a href="index.html">home</a>
+  </div>
+  <div id="chart"></div>
+
+  <script>
+    let data = [];
+
+    // Create a color scale for the slices
+    const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+
+    // Create the pie generator
+    const pie = d3.pie()
+      .value(d => d.amount)
+      .sort(null); // Disable sorting of slices
+
+    // Create an arc generator for the slices
+    const arc = d3.arc()
+      .innerRadius(0)
+      .outerRadius(Math.min(window.innerWidth, window.innerHeight) / 4); // Adjust the outer radius based on window size
+
+    // Create the SVG element
+    const svg = d3.select("#chart")
+      .append("svg")
+      .attr("preserveAspectRatio", "xMinYMin meet")
+      .attr("viewBox", `0 0 ${window.innerWidth / 2} ${window.innerHeight / 2}`)
+      .append("g")
+      .attr("transform", `translate(${window.innerWidth / 4}, ${window.innerHeight / 4})`);
+
+    // Function to update the chart based on user input
+    function updateChart() {
+      // Clear previous data
+      data = [];
+
+      // Get user input
+      const input = document.getElementById("inputData").value;
+
+      // Parse user input
+      const inputData = input.split(",").map(d => {
+        const [label, amount] = d.trim().split(" ");
+        return { label, amount: +amount };
+      });
+
+      // Add user input data to main data array
+      data = data.concat(inputData);
+
+      // Calculate total amount
+      const totalAmount = data.reduce((acc, d) => acc + d.amount, 0);
+
+      // Generate the pie slices
+      const slices = svg.selectAll("path")
+        .data(pie(data));
+
+      // Update existing slices
+      slices.transition()
+        .duration(500)
+        .attr("d", arc);
+
+      // Enter new slices
+      slices.enter()
+        .append("path")
+        .attr("d", arc)
+        .attr("fill", (d, i) => colorScale(i));
+
+      // Exit removed slices
+      slices.exit().remove();
+
+      // Add labels to the slices
+      const labels = svg.selectAll("text")
+        .data(pie(data));
+
+      // Update existing labels
+      labels.transition()
+        .duration(500)
+        .attr("transform", d => `translate(${arc.centroid(d)})`)
+        .text(d => `${d.data.label} ${Math.round((d.data.amount / totalAmount) * 100)}%`);
+
+      // Enter new labels
+      labels.enter()
+        .append("text")
+        .attr("transform", d => `translate(${arc.centroid(d)})`)
+        .text(d => `${d.data.label} ${Math.round((d.data.amount / totalAmount) * 100)}%`)
+        .attr("text-anchor", "middle")
+        .attr("dy", "0.35em")
+        .style("font-size", "12px");
+
+      // Exit removed labels
+      labels.exit().remove();
+    }
+
+    // Initially update the chart
+    updateChart();
+  </script>
+</body>
+</html>
